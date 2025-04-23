@@ -1,0 +1,99 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+
+## 1.
+def createData(noise,N=50):
+    np.random.seed(100) # Set the seed for replicability
+    # Generate (x1,x2,g) triples:
+    X1 = np.array([np.random.normal(1,noise,N),np.random.normal(1,noise,N)])
+    X2 = np.array([np.random.normal(3,noise,N),np.random.normal(2,noise,N)])
+    X3 = np.array([np.random.normal(5,noise,N),np.random.normal(3,noise,N)])
+    # Concatenate into one data frame
+    gdf1 = pd.DataFrame({'x1':X1[0,:],'x2':X1[1,:],'group':'a'})
+    gdf2 = pd.DataFrame({'x1':X2[0,:],'x2':X2[1,:],'group':'b'})
+    gdf3 = pd.DataFrame({'x1':X3[0,:],'x2':X3[1,:],'group':'c'})
+    df = pd.concat([gdf1,gdf2,gdf3],axis=0)
+    return df
+
+df0_125 = createData(0.125)
+df0_25 = createData(0.25)
+df0_5 = createData(0.5)
+df1_0 = createData(1.0)
+df2_0 = createData(2.0)
+
+## 2.
+def createData(noise, N=50):
+    np.random.seed(100)
+    X1 = np.array([np.random.normal(1, noise, N), np.random.normal(1, noise, N)])
+    X2 = np.array([np.random.normal(3, noise, N), np.random.normal(2, noise, N)])
+    X3 = np.array([np.random.normal(5, noise, N), np.random.normal(3, noise, N)])
+    gdf1 = pd.DataFrame({'x1': X1[0, :], 'x2': X1[1, :], 'group': 'a'})
+    gdf2 = pd.DataFrame({'x1': X2[0, :], 'x2': X2[1, :], 'group': 'b'})
+    gdf3 = pd.DataFrame({'x1': X3[0, :], 'x2': X3[1, :], 'group': 'c'})
+    return pd.concat([gdf1, gdf2, gdf3], axis=0)
+
+noise_levels = [0.125, 0.25, 0.5, 1.0, 2.0]
+datasets = {f"Noise = {noise}": createData(noise) for noise in noise_levels}
+
+# Scatterplot
+fig, axes = plt.subplots(1, 5, figsize=(25, 5), sharex=True, sharey=True)
+
+for ax, (label, df) in zip(axes, datasets.items()):
+    for group in df['group'].unique():
+        subset = df[df['group'] == group]
+        ax.scatter(subset['x1'], subset['x2'], label=group, alpha=0.6)
+    ax.set_title(label)
+    ax.set_xlabel("x1")
+    ax.set_ylabel("x2")
+    ax.legend()
+
+plt.suptitle("Scatterplots of (x1, x2) by Group with Increasing Noise", fontsize=16)
+plt.tight_layout(rect=[0, 0, 1, 0.95])
+plt.show()
+
+# As the noise goes up from 0.125 to 2.0, the scatter plot became more scattered across the graph.
+
+## 3.
+
+def createData(noise, N=50):
+    np.random.seed(100)
+    X1 = np.array([np.random.normal(1, noise, N), np.random.normal(1, noise, N)])
+    X2 = np.array([np.random.normal(3, noise, N), np.random.normal(2, noise, N)])
+    X3 = np.array([np.random.normal(5, noise, N), np.random.normal(3, noise, N)])
+    gdf1 = pd.DataFrame({'x1': X1[0, :], 'x2': X1[1, :], 'group': 'a'})
+    gdf2 = pd.DataFrame({'x1': X2[0, :], 'x2': X2[1, :], 'group': 'b'})
+    gdf3 = pd.DataFrame({'x1': X3[0, :], 'x2': X3[1, :], 'group': 'c'})
+    return pd.concat([gdf1, gdf2, gdf3], axis=0)
+
+noise_levels = [0.125, 1.0, 2.0]
+datasets = {f"Noise = {noise}": createData(noise) for noise in noise_levels}
+
+def get_scree_data(df, max_k=6):
+    X = df[['x1', 'x2']].values
+    inertias = []
+    for k in range(1, max_k + 1):
+        kmeans = KMeans(n_clusters=k, n_init=10, random_state=42)
+        kmeans.fit(X)
+        inertias.append(kmeans.inertia_)
+    return inertias
+
+scree_data = {label: get_scree_data(df) for label, df in datasets.items()}
+
+plt.figure(figsize=(10, 6))
+for label, inertias in scree_data.items():
+    plt.plot(range(1, 7), inertias, marker='o', label=label)
+
+plt.title("Scree Plots for Different Noise Levels")
+plt.xlabel("Number of Clusters (k)")
+plt.ylabel("Inertia (Within-Cluster Sum of Squares)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# As noise level increases, the intercept of inertia increase. They have consistent pattern.
+
+## 4.
+# The elbow shows the optimal tradeoff between model complexity and explanatory power. In clean data,
+# the elbow is informative. In noisy data, the elbow may disappear or shift.
